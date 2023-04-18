@@ -10,6 +10,8 @@
 
 #include <GLFW/glfw3.h>
 
+namespace ranges = std::ranges;
+
 inline void panic(const char *msg)
 {
     std::fprintf(stderr, "%s", msg);
@@ -86,16 +88,14 @@ int main()
             vkEnumeratePhysicalDevices(instance, &count, devices.data());
 
             // find the first physical device that supports the swapchain extension
-            auto it = std::find_if(devices.begin(), devices.end(), [](const VkPhysicalDevice device) {
+            auto it = ranges::find_if(devices, [](const VkPhysicalDevice device) {
                 uint32_t count;
                 vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr);
                 std::vector<VkExtensionProperties> extensionProperties(count);
                 vkEnumerateDeviceExtensionProperties(device, nullptr, &count, extensionProperties.data());
-                const auto supported =
-                    std::any_of(extensionProperties.begin(), extensionProperties.end(),
-                                [](const VkExtensionProperties &properties) {
-                                    return strcmp(properties.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
-                                });
+                const auto supported = ranges::any_of(extensionProperties, [](const VkExtensionProperties &properties) {
+                    return strcmp(properties.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
+                });
                 return supported;
             });
 
@@ -118,10 +118,9 @@ int main()
                 return -1;
             std::vector<VkQueueFamilyProperties> properties(count);
             vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &count, properties.data());
-            auto it = std::find_if(properties.begin(), properties.end(), [](const VkQueueFamilyProperties &properties) {
+            auto it = ranges::find_if(properties, [](const VkQueueFamilyProperties &properties) {
                 return properties.queueCount > 0 && (properties.queueFlags & VK_QUEUE_GRAPHICS_BIT);
             });
-
             return it != properties.end() ? std::distance(properties.begin(), it) : -1;
         }();
         if (queueFamilyIndex == -1)
